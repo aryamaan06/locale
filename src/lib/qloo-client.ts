@@ -448,7 +448,7 @@ export function filterAndComputeRankDiff(
         return false;
       }
 
-      // Point #2: Direct Competitor Filter — Exclude direct competitors from partner venue list
+      // Point #2: Direct Competitor Filter — Exclude direct competitors from partner venue list by name
       const bCat = (brandCategory || "").toLowerCase();
       if (bCat.includes("coffee") || bCat.includes("cafe") || bCat.includes("roaster")) {
         const isCoffeeCompetitor =
@@ -462,15 +462,12 @@ export function filterAndComputeRankDiff(
           name.includes("juice") ||
           name.includes("tea house") ||
           name.includes("tea shop") ||
+          name.includes("tea room") ||
           name.includes("ozone") ||
           name.includes("concierge") ||
           name.includes("alula") ||
           name.includes("tomoko") ||
-          name.includes("ipsento") ||
-          tagsStr.includes("coffee") ||
-          tagsStr.includes("cafe") ||
-          tagsStr.includes("bakery") ||
-          typeStr.includes("coffee");
+          name.includes("ipsento");
         if (isCoffeeCompetitor) {
           return false;
         }
