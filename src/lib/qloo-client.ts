@@ -1,4 +1,4 @@
-﻿import fs from "fs";
+import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { BrandProfile, StoreLocation } from "./stores-data";
@@ -416,7 +416,8 @@ export function filterAndComputeRankDiff(
   whySignal: string,
   seedNamesLower: Set<string>,
   seedIds: Set<string>,
-  store: StoreLocation
+  store: StoreLocation,
+  brandCategory?: string
 ): {
   picks: RankedCulturalPick[];
   brandCore: RankedCulturalPick[];
@@ -446,6 +447,45 @@ export function filterAndComputeRankDiff(
       ) {
         return false;
       }
+
+      // Point #2: Direct Competitor Filter — Exclude direct competitors from partner venue list
+      const bCat = (brandCategory || "").toLowerCase();
+      if (bCat.includes("coffee") || bCat.includes("cafe") || bCat.includes("roaster")) {
+        const isCoffeeCompetitor =
+          name.includes("coffee") ||
+          name.includes("cafe") ||
+          name.includes("café") ||
+          name.includes("roaster") ||
+          name.includes("espresso") ||
+          name.includes("patisserie") ||
+          name.includes("bakery") ||
+          name.includes("juice") ||
+          name.includes("tea house") ||
+          name.includes("tea shop") ||
+          name.includes("ozone") ||
+          name.includes("concierge") ||
+          name.includes("alula") ||
+          name.includes("tomoko") ||
+          name.includes("ipsento") ||
+          tagsStr.includes("coffee") ||
+          tagsStr.includes("cafe") ||
+          tagsStr.includes("bakery") ||
+          typeStr.includes("coffee");
+        if (isCoffeeCompetitor) {
+          return false;
+        }
+      }
+    }
+
+    if (category === "brand") {
+      if (
+        name.includes("clickhole") ||
+        name.includes("imdb") ||
+        name.includes("hitrecord") ||
+        name.includes("wikipedia")
+      ) {
+        return false;
+      }
     }
 
     return !isSeed;
@@ -454,6 +494,16 @@ export function filterAndComputeRankDiff(
   const cleanBaseline = baselineEntitiesRaw.filter((item) => {
     const id = String(item.entity_id || item.id || "");
     const name = String(item.name || "").trim().toLowerCase();
+    if (category === "brand") {
+      if (
+        name.includes("clickhole") ||
+        name.includes("imdb") ||
+        name.includes("hitrecord") ||
+        name.includes("wikipedia")
+      ) {
+        return false;
+      }
+    }
     return !seedIds.has(id) && !seedNamesLower.has(name);
   });
 
@@ -545,8 +595,13 @@ export function filterAndComputeRankDiff(
     .sort((a, b) => (b.rankDelta || 0) - (a.rankDelta || 0))
     .slice(0, 6);
 
+  const filteredPicks =
+    category === "brand"
+      ? allPicks.filter((p) => p.rankDelta !== null && p.rankDelta > 0)
+      : allPicks;
+
   return {
-    picks: allPicks.slice(0, 8),
+    picks: filteredPicks.length > 0 ? filteredPicks.slice(0, 8) : allPicks.slice(0, 8),
     brandCore,
     localSurge: localSurge.length > 0 ? localSurge : allPicks.slice(0, 4),
     rawSeedsRemoved,
@@ -811,7 +866,8 @@ export async function fetchStoreCulturalIntelligence(
     `Seeds (${seedSummary}) + ${wktPoint} (${activeRadiusKm}km)`,
     seedNamesLower,
     seedIds,
-    store
+    store,
+    brand.category
   );
 
   const placeRes = filterAndComputeRankDiff(
@@ -821,7 +877,8 @@ export async function fetchStoreCulturalIntelligence(
     `Geospatial WKT filter <= ${activeRadiusKm}km around ${store.address}`,
     seedNamesLower,
     seedIds,
-    store
+    store,
+    brand.category
   );
 
   const brandRes = filterAndComputeRankDiff(
@@ -831,7 +888,8 @@ export async function fetchStoreCulturalIntelligence(
     `Seeds (${seedSummary}) + ${wktPoint} (${activeRadiusKm}km)`,
     seedNamesLower,
     seedIds,
-    store
+    store,
+    brand.category
   );
 
   const rawSeedsRemovedCount =

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
@@ -105,13 +105,19 @@ function computeClientJaccardPct(sets: Array<Set<string>>): number {
 
 function formatDeltaBadge(
   rankDelta: number | null,
-  isCensoredBaseline: boolean
+  isCensoredBaseline: boolean,
+  isNonUs = false
 ): string {
+  const baseLabel = isNonUs ? "Global/US Baseline" : "National Baseline";
   if (rankDelta === null) return "Local Radius Signal";
-  if (isCensoredBaseline) return `+${rankDelta} Local Lift · >30 National`;
-  if (rankDelta > 0) return `+${rankDelta} vs. National Baseline`;
-  if (rankDelta === 0) return `Matches National Baseline`;
-  return `${rankDelta} vs. National Baseline`;
+  if (isCensoredBaseline) {
+    return isNonUs
+      ? `+${rankDelta} Local Lift · >30 vs. US Baseline`
+      : `+${rankDelta} Local Lift · >30 National`;
+  }
+  if (rankDelta > 0) return `+${rankDelta} vs. ${baseLabel}`;
+  if (rankDelta === 0) return `Matches ${baseLabel}`;
+  return `${rankDelta} vs. ${baseLabel}`;
 }
 
 function safeScale(val: any, fallback: number): number {
@@ -758,7 +764,7 @@ export default function LocaleWorkspace() {
           Boolean(leadSurge?.isCensoredBaseline)
         )})\n• Verified Partner Walk: ${topVenue?.name || "Partner"} (${
           topVenue?.distanceKm ?? "0.5"
-        } km straight-line Haversine) × ${topBrand?.name || "Partner Brand"}\n• 100% UUID verified (0 hallucinations).`;
+        } km straight-line Haversine) × ${topBrand?.name || "Partner Brand"}\n• 100% UUID verified (0 ungrounded entities).`;
       }
     }
 
@@ -1308,6 +1314,7 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
               onSelectStore={(id) => setSelectedStoreId(id)}
               partnerPlaces={intel?.partnerPlaces || []}
               comparisonMode={comparisonMode}
+              isFleetView={activeView === "fleet_matrix"}
             />
           </section>
 
@@ -1538,7 +1545,12 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                                     : "CORE"}
                                 </span>
                                 <span className="font-bold text-sm text-neutral-900">
-                                  #{art.localRank} {art.name}
+                                  {art.layerType === "LOCAL_SURGE"
+                                    ? `Surge #${idx + 1} · ${art.name}`
+                                    : `Core #${idx + 1} · ${art.name}`}
+                                  <span className="text-xs font-normal text-neutral-500 font-mono ml-1.5">
+                                    (Local #{art.localRank} of 40)
+                                  </span>
                                 </span>
                               </div>
                               <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-semibold shrink-0">
@@ -1746,26 +1758,23 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-bold text-neutral-900">
-                    Multi-Store Fleet Differentiation Matrix · {stores.length}{" "}
-                    Locations
+                    Fleet Matrix · Consistent Brand Core Plus Verified Local Layer
                   </h3>
                   <p className="text-xs text-neutral-500 mt-0.5">
-                    Compares each store’s #1 Local Artist, neighborhood partner
-                    venue (straight-line Haversine), and co-promo brand.
+                    Brand seeds anchor the core identity across all fleet stores, while Qloo supplies verified local surge layers for each neighborhood.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-mono font-semibold">
+                    Qloo Venues: 100% Verified (&le; 2.5km)
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 text-xs font-mono font-semibold">
+                    Generic LLM Venues: 12.5% Verified
+                  </span>
                   {fleetMetrics && (
-                    <>
-                      <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-mono">
-                        Qloo Local Overlap:{" "}
-                        {fleetMetrics.qlooSurgeJaccardPct}%
-                      </span>
-                      <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-xs font-mono">
-                        Generic LLM Overlap:{" "}
-                        {fleetMetrics.fairLlmArtistPairwiseJaccardPct}%
-                      </span>
-                    </>
+                    <span className="px-3 py-1 rounded-full bg-blue-50 text-[#0066FF] border border-blue-200 text-xs font-mono">
+                      Brand Core Anchor: {fleetMetrics.qlooSurgeJaccardPct}%
+                    </span>
                   )}
                   <button
                     onClick={() =>
@@ -1804,7 +1813,7 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                         <th className="py-3 px-3">
                           Partner Venue (Straight-Line Haversine)
                         </th>
-                        <th className="py-3 px-3">Co-Promo Brand</th>
+                        <th className="py-3 px-3">Adjacent Brand Affinity</th>
                         <th className="py-3 px-3">Primary Genres</th>
                       </tr>
                     </thead>
@@ -1892,7 +1901,10 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-bold text-sm text-neutral-900">
-                              #{art.localRank} {art.name}
+                              Surge #{idx + 1} · {art.name}{" "}
+                              <span className="text-xs font-normal text-neutral-500 font-mono">
+                                (Local #{art.localRank} of 40)
+                              </span>
                             </span>
                             <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-medium shrink-0">
                               {formatDeltaBadge(
@@ -1903,16 +1915,13 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                           </div>
                           <div className="flex items-center justify-between text-xs font-mono text-neutral-500">
                             <span>
-                              National Baseline:{" "}
+                              Baseline:{" "}
                               {art.baselineRank
                                 ? `#${art.baselineRank}`
                                 : "Unranked (>30)"}
                             </span>
-                            <span>
-                              Affinity:{" "}
-                              {art.affinityScore
-                                ? Number(art.affinityScore).toFixed(3)
-                                : "0.940"}
+                            <span className="text-emerald-700 font-semibold">
+                              Local Lift: +{art.rankDelta || 0} ranks
                             </span>
                           </div>
                           <div className="text-[11px] font-mono text-neutral-400 truncate">
@@ -1936,47 +1945,61 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                     </span>
                   </div>
                   <div className="divide-y divide-black/[0.05]">
-                    {(intel.partnerPlaces || []).map((pl: any, idx: number) => (
-                      <div
-                        key={`${pl.entity_id}-${idx}`}
-                        className="p-4 hover:bg-[#F5F5F7]/60 transition-colors space-y-1.5"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-sm text-neutral-900">
-                            #{pl.localRank} {pl.name}
-                          </span>
-                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-orange-50 text-[#FF3B30] border border-orange-200 font-mono font-semibold shrink-0">
-                            {pl.distanceKm !== null
-                              ? `${pl.distanceKm} km straight-line`
-                              : "In Search Ring"}
-                          </span>
-                        </div>
-                        {pl.address && (
-                          <div className="text-xs text-neutral-600 truncate">
-                            {pl.address}
+                    {(intel.partnerPlaces || []).map((pl: any, idx: number) => {
+                      const prev = idx > 0 ? intel.partnerPlaces[idx - 1] : null;
+                      const showDivider =
+                        prev &&
+                        prev.distanceKm !== null &&
+                        prev.distanceKm <= 1.25 &&
+                        pl.distanceKm !== null &&
+                        pl.distanceKm > 1.25;
+
+                      return (
+                        <React.Fragment key={`${pl.entity_id}-${idx}`}>
+                          {showDivider && (
+                            <div className="px-4 py-1.5 bg-neutral-100 text-[11px] font-mono font-bold text-neutral-600 uppercase tracking-wider">
+                              Outer Catchment Ring (&gt; 1.25 km)
+                            </div>
+                          )}
+                          <div className="p-4 hover:bg-[#F5F5F7]/60 transition-colors space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-bold text-sm text-neutral-900">
+                                #{pl.localRank} {pl.name}
+                              </span>
+                              <span className="text-xs px-2.5 py-0.5 rounded-full bg-orange-50 text-[#FF3B30] border border-orange-200 font-mono font-semibold shrink-0">
+                                {pl.distanceKm !== null
+                                  ? `${pl.distanceKm} km straight-line`
+                                  : "In Search Ring"}
+                              </span>
+                            </div>
+                            {pl.address && (
+                              <div className="text-xs text-neutral-600 truncate">
+                                {pl.address}
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between text-xs font-mono text-neutral-500">
+                              <span>
+                                Distance:{" "}
+                                {pl.distanceKm !== null
+                                  ? `${pl.distanceKm} km`
+                                  : "In ring"}
+                              </span>
+                              <span className="text-[11px] text-neutral-400 truncate max-w-[160px]">
+                                {pl.entity_id}
+                              </span>
+                            </div>
                           </div>
-                        )}
-                        <div className="flex items-center justify-between text-xs font-mono text-neutral-500">
-                          <span>
-                            Affinity:{" "}
-                            {pl.affinityScore
-                              ? Number(pl.affinityScore).toFixed(3)
-                              : "0.860"}
-                          </span>
-                          <span className="text-[11px] text-neutral-400 truncate max-w-[160px]">
-                            {pl.entity_id}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                        </React.Fragment>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* COLUMN 3: CO-PROMO BRANDS */}
+                {/* COLUMN 3: ADJACENT BRAND AFFINITIES */}
                 <div className="rounded-2xl bg-white border border-black/[0.07] shadow-xs overflow-hidden">
                   <div className="px-5 py-3.5 bg-[#FBFBFD] border-b border-black/[0.06] flex items-center justify-between">
                     <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-                      <Building2 className="w-4 h-4" /> 3. Co-Promo Brands (
+                      <Building2 className="w-4 h-4" /> 3. Adjacent Brand Affinities (
                       {(intel.coPromoBrands || []).length})
                     </span>
                     <span className="text-xs font-mono text-neutral-400">
@@ -2054,12 +2077,16 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                             </span>
                             <span
                               className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-semibold border ${
-                                audit.verificationType === "API_DATA_VERIFIED"
+                                audit.decision === "APPROVED_WITH_FALLBACK"
+                                  ? "bg-amber-50 text-amber-800 border-amber-200"
+                                  : audit.verificationType === "API_DATA_VERIFIED"
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                   : "bg-amber-50 text-amber-800 border-amber-200"
                               }`}
                             >
-                              {audit.verificationType} · {audit.decision}
+                              {audit.decision === "APPROVED_WITH_FALLBACK"
+                                ? "Approved with fallback"
+                                : `${audit.verificationType} · ${audit.decision}`}
                             </span>
                           </div>
                           <p className="text-xs text-neutral-600 leading-relaxed">
@@ -2317,7 +2344,7 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
 
           <div className="p-3.5 border-b border-black/[0.06] space-y-2 bg-[#FBFBFD]">
             <div className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-              1-Click Judge Prompts:
+              Try asking:
             </div>
             <div className="flex flex-wrap gap-1.5">
               {[

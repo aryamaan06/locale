@@ -30,26 +30,33 @@ interface LocaleMapProps {
   onSelectStore: (storeId: string) => void;
   partnerPlaces: PartnerPlacePin[];
   comparisonMode: "qloo" | "plain_llm";
+  isFleetView?: boolean;
 }
 
 function MapViewUpdater({
   lat,
   lng,
   isExpanded,
+  isFleetView,
 }: {
   lat: number;
   lng: number;
   isExpanded: boolean;
+  isFleetView?: boolean;
 }) {
   const map = useMap();
 
   useEffect(() => {
     const timer = setTimeout(() => {
       map.invalidateSize();
-      map.setView([lat, lng], isExpanded ? 14 : 13, { animate: true });
+      if (isFleetView) {
+        map.setView([38.0, -30.0], 2, { animate: true });
+      } else {
+        map.setView([lat, lng], isExpanded ? 14 : 13, { animate: true });
+      }
     }, 80);
     return () => clearTimeout(timer);
-  }, [lat, lng, isExpanded, map]);
+  }, [lat, lng, isExpanded, isFleetView, map]);
 
   return null;
 }
@@ -60,6 +67,7 @@ export default function LocaleMap({
   onSelectStore,
   partnerPlaces,
   comparisonMode,
+  isFleetView,
 }: LocaleMapProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -97,6 +105,7 @@ export default function LocaleMap({
           lat={activeStore.lat}
           lng={activeStore.lng}
           isExpanded={isExpanded}
+          isFleetView={isFleetView}
         />
 
         {/* Outer Search Ring (Blue / Red in LLM mode) */}
@@ -283,7 +292,11 @@ export default function LocaleMap({
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-[#FF3B30] border-2 border-white shadow-2xs inline-block" />
-                Verified Partners ({validPartnerPins.length})
+                Walkable Partner (&le; 1.25km)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#FB923C] border-2 border-white shadow-2xs inline-block" />
+                Outer Catchment (1.25 - 2.5km)
               </span>
             </div>
           </div>
