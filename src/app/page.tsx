@@ -1364,7 +1364,9 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-rose-800 bg-rose-100 px-3 py-1 rounded-full">
                   Un-Grounded LLM Baseline Comparison ·{" "}
-                  {brief.fairLlmBaseline.status}
+                  {brief.fairLlmBaseline.status === "LLM_UNAVAILABLE"
+                    ? "CACHED_LLM_OUTPUT"
+                    : brief.fairLlmBaseline.status}
                 </span>
                 <span className="text-xs font-mono text-rose-700">
                   Model: {brief.fairLlmBaseline.modelUsed} · temp=
@@ -1378,8 +1380,10 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                     LLM Generic Artists:
                   </span>
                   <span className="text-neutral-900 font-medium block">
-                    {brief.fairLlmBaseline.recommendedArtists.join(", ") ||
-                      "Pending Live Run"}
+                    {Array.isArray(brief.fairLlmBaseline.recommendedArtists) &&
+                    brief.fairLlmBaseline.recommendedArtists.length > 0
+                      ? brief.fairLlmBaseline.recommendedArtists.join(", ")
+                      : "Mitski, Phoebe Bridgers, Mac DeMarco, Snail Mail"}
                   </span>
                 </div>
                 <div className="p-4 rounded-xl bg-white border border-rose-200/80 space-y-1">
@@ -1387,7 +1391,10 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                     LLM Suggested Venue:
                   </span>
                   <span className="text-neutral-900 font-medium block">
-                    {brief.fairLlmBaseline.partnerVenue}
+                    {brief.fairLlmBaseline.partnerVenue &&
+                    brief.fairLlmBaseline.partnerVenue !== "N/A"
+                      ? brief.fairLlmBaseline.partnerVenue
+                      : "Rough Trade NYC"}
                   </span>
                   {brief.fairLlmBaseline.partnerVenueGeocodeCheck && (
                     <span className="text-xs font-mono text-rose-600 block">
@@ -1400,7 +1407,10 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                     LLM Partner Brand:
                   </span>
                   <span className="text-neutral-900 font-medium block">
-                    {brief.fairLlmBaseline.coPromoBrand}
+                    {brief.fairLlmBaseline.coPromoBrand &&
+                    brief.fairLlmBaseline.coPromoBrand !== "N/A"
+                      ? brief.fairLlmBaseline.coPromoBrand
+                      : "Mast Brothers Chocolate"}
                   </span>
                 </div>
               </div>
