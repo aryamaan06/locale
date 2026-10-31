@@ -304,7 +304,11 @@ export async function callGroqChat(
   systemPrompt: string,
   userPrompt: string
 ): Promise<string> {
-  const models = ["openai/gpt-oss-120b", "qwen/qwen3-32b"];
+  const models = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.8-27b",
+  ];
   for (const model of models) {
     try {
       const res = await fetch(
@@ -324,7 +328,7 @@ export async function callGroqChat(
             temperature: 0.3,
             max_tokens: 600,
           }),
-          signal: AbortSignal.timeout(9000),
+          signal: AbortSignal.timeout(3500),
         }
       );
       if (!res.ok) continue;
