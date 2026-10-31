@@ -587,6 +587,18 @@ export function filterAndComputeRankDiff(
     .filter((p) => p.baselineRank !== null && p.baselineRank <= 10)
     .slice(0, 4);
 
+  const fallbackBrandCore = allPicks
+    .filter((p) => p.baselineRank !== null)
+    .sort((a, b) => (a.baselineRank || 99) - (b.baselineRank || 99))
+    .slice(0, 4);
+
+  const finalBrandCore =
+    brandCore.length > 0
+      ? brandCore
+      : fallbackBrandCore.length > 0
+      ? fallbackBrandCore
+      : allPicks.slice(0, 4);
+
   const localSurge = allPicks
     .filter((p) => p.rankDelta !== null && p.rankDelta > 0)
     .sort((a, b) => (b.rankDelta || 0) - (a.rankDelta || 0))
@@ -599,7 +611,7 @@ export function filterAndComputeRankDiff(
 
   return {
     picks: filteredPicks.length > 0 ? filteredPicks.slice(0, 8) : allPicks.slice(0, 8),
-    brandCore,
+    brandCore: finalBrandCore,
     localSurge: localSurge.length > 0 ? localSurge : allPicks.slice(0, 4),
     rawSeedsRemoved,
   };

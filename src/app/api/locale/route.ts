@@ -8,7 +8,6 @@ import {
 } from "@/lib/agent-planner";
 
 export const maxDuration = 30;
-export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {

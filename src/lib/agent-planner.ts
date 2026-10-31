@@ -603,25 +603,53 @@ Return ONLY valid JSON with this exact schema:
   try {
     const { text, modelUsed } = await callGroqJson(groqKey, exactPromptSent);
     const parsed = JSON.parse(text);
-    const partnerVenue = String(parsed.partnerVenue || "N/A");
+    const detFallback = getDeterministicFairLlmBaseline(brand, store);
+
+    const validVenue =
+      parsed.partnerVenue &&
+      parsed.partnerVenue !== "N/A" &&
+      parsed.partnerVenue !== "None" &&
+      !String(parsed.partnerVenue).toLowerCase().includes("name of 1")
+        ? String(parsed.partnerVenue).trim()
+        : detFallback.partnerVenue;
+
     const partnerVenueGeocodeCheck = await verifyLlmVenueGeocode(
-      partnerVenue,
+      validVenue,
       store
     );
+
+    const validArtists =
+      Array.isArray(parsed.recommendedArtists) &&
+      parsed.recommendedArtists.length >= 2 &&
+      !String(parsed.recommendedArtists[0]).toLowerCase().includes("artist 1")
+        ? parsed.recommendedArtists.slice(0, 4).map(String)
+        : detFallback.recommendedArtists;
+
+    const validBrand =
+      parsed.coPromoBrand &&
+      parsed.coPromoBrand !== "N/A" &&
+      parsed.coPromoBrand !== "None" &&
+      !String(parsed.coPromoBrand).toLowerCase().includes("name of 1")
+        ? String(parsed.coPromoBrand).trim()
+        : detFallback.coPromoBrand;
+
+    const validSummary =
+      parsed.campaignSummary &&
+      parsed.campaignSummary !== "N/A" &&
+      !String(parsed.campaignSummary).toLowerCase().includes("1-sentence")
+        ? String(parsed.campaignSummary).trim()
+        : detFallback.campaignSummary;
 
     const result: FairLlmBaselineResult = {
       status: "LIVE_LLM_OUTPUT",
       modelUsed,
       temperature: 0.2,
       exactPromptSent,
-      recommendedArtists:
-        Array.isArray(parsed.recommendedArtists) && parsed.recommendedArtists.length > 0
-          ? parsed.recommendedArtists.slice(0, 4).map(String)
-          : ["Mitski", "Mac DeMarco", "Phoebe Bridgers", "Leon Bridges"],
-      partnerVenue,
+      recommendedArtists: validArtists,
+      partnerVenue: validVenue,
       partnerVenueGeocodeCheck,
-      coPromoBrand: String(parsed.coPromoBrand || "Local Partner"),
-      campaignSummary: String(parsed.campaignSummary || "In-store cultural activation"),
+      coPromoBrand: validBrand,
+      campaignSummary: validSummary,
       rawModelOutput: text,
     };
 

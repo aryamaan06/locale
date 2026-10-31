@@ -103,6 +103,15 @@ function computeClientJaccardPct(sets: Array<Set<string>>): number {
   return pairs > 0 ? Number(((total / pairs) * 100).toFixed(1)) : 0;
 }
 
+function isNonUsLocation(state?: string): boolean {
+  if (!state) return false;
+  const s = state.toUpperCase().trim();
+  const usStates = new Set([
+    "NY", "TX", "CA", "FL", "WA", "IL", "CO", "MA", "OR", "GA", "PA", "NC", "TN", "AZ", "OH", "MI", "VA", "NJ"
+  ]);
+  return !usStates.has(s);
+}
+
 function formatDeltaBadge(
   rankDelta: number | null,
   isCensoredBaseline: boolean,
@@ -560,6 +569,7 @@ export default function LocaleWorkspace() {
           if (res.ok && data?.ok) {
             clientCacheRef.current[memKey] = data;
           }
+          await new Promise((r) => setTimeout(r, 200));
         }
 
         if (myFleetId !== fleetReqIdRef.current) return;
@@ -578,6 +588,7 @@ export default function LocaleWorkspace() {
             storeName: st.name,
             neighborhood: st.neighborhood,
             city: `${st.city}, ${st.state}`,
+            state: st.state,
             radiusKm: intel.radiusKmUsed,
             sourceMode: intel.sourceMode,
             topSurgeArtist: leadSurge?.name || "Local Pick",
@@ -1566,7 +1577,8 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                               <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-semibold shrink-0">
                                 {formatDeltaBadge(
                                   art.rankDelta,
-                                  art.isCensoredBaseline
+                                  art.isCensoredBaseline,
+                                  isNonUsLocation(activeStore.state)
                                 )}
                               </span>
                             </div>
@@ -1640,7 +1652,7 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                     </div>
                     <div className="p-3.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05]">
                       <div className="text-xs text-neutral-500 font-semibold">
-                        Co-Promo Brand
+                        Adjacent Brand Affinity
                       </div>
                       <div className="text-sm font-bold text-[#0066FF] mt-1">
                         {brief.localPartnershipActivation?.coPromoBrand}
@@ -1847,7 +1859,8 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                             <div className="text-[11px] font-mono text-emerald-700">
                               {formatDeltaBadge(
                                 row.artistRankDelta,
-                                row.isCensoredBaseline
+                                row.isCensoredBaseline,
+                                isNonUsLocation(row.state)
                               )}
                             </div>
                           </td>
@@ -1919,13 +1932,16 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                             <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-medium shrink-0">
                               {formatDeltaBadge(
                                 art.rankDelta,
-                                art.isCensoredBaseline
+                                art.isCensoredBaseline,
+                                isNonUsLocation(activeStore.state)
                               )}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-xs font-mono text-neutral-500">
                             <span>
-                              Baseline:{" "}
+                              {isNonUsLocation(activeStore.state)
+                                ? "Global/US Baseline: "
+                                : "Baseline: "}
                               {art.baselineRank
                                 ? `#${art.baselineRank}`
                                 : "Unranked (>30)"}
@@ -2029,13 +2045,16 @@ ${(brief.soundtrackProgram?.daypartSchedule || [])
                           <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-medium shrink-0">
                             {formatDeltaBadge(
                               br.rankDelta,
-                              br.isCensoredBaseline
+                              br.isCensoredBaseline,
+                              isNonUsLocation(activeStore.state)
                             )}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs font-mono text-neutral-500">
                           <span>
-                            National Baseline:{" "}
+                            {isNonUsLocation(activeStore.state)
+                              ? "Global/US Baseline: "
+                              : "National Baseline: "}
                             {br.baselineRank
                               ? `#${br.baselineRank}`
                               : "Unranked (>30)"}
