@@ -108,21 +108,23 @@ export default function LocaleMap({
           isFleetView={isFleetView}
         />
 
-        {/* Outer Search Ring (Blue / Red in LLM mode) */}
-        <Circle
-          center={[activeStore.lat, activeStore.lng]}
-          radius={activeStore.radiusKm * 1000}
-          pathOptions={{
-            color: comparisonMode === "qloo" ? "#0066FF" : "#E11D48",
-            weight: 1.5,
-            dashArray: "6 6",
-            fillColor: comparisonMode === "qloo" ? "#0066FF" : "#E11D48",
-            fillOpacity: 0.05,
-          }}
-        />
+        {/* Outer Search Ring (Blue / Red in LLM mode) - only in single store view */}
+        {!isFleetView && (
+          <Circle
+            center={[activeStore.lat, activeStore.lng]}
+            radius={activeStore.radiusKm * 1000}
+            pathOptions={{
+              color: comparisonMode === "qloo" ? "#0066FF" : "#E11D48",
+              weight: 1.5,
+              dashArray: "6 6",
+              fillColor: comparisonMode === "qloo" ? "#0066FF" : "#E11D48",
+              fillOpacity: 0.05,
+            }}
+          />
+        )}
 
-        {/* Inner 1.2km Priority Neighborhood Zone (Green) */}
-        {comparisonMode === "qloo" && (
+        {/* Inner 1.2km Priority Neighborhood Zone (Green) - only in single store view */}
+        {!isFleetView && comparisonMode === "qloo" && (
           <Circle
             center={[activeStore.lat, activeStore.lng]}
             radius={1200}
@@ -143,12 +145,12 @@ export default function LocaleMap({
             <CircleMarker
               key={st.id}
               center={[st.lat, st.lng]}
-              radius={6}
+              radius={isFleetView ? 8 : 6}
               pathOptions={{
                 color: "#FFFFFF",
                 weight: 2,
                 fillColor: "#1D1D1F",
-                fillOpacity: 0.8,
+                fillOpacity: 0.85,
               }}
               eventHandlers={{
                 click: () => onSelectStore(st.id),
@@ -162,8 +164,9 @@ export default function LocaleMap({
             </CircleMarker>
           ))}
 
-        {/* Verified Neighborhood Partner Venues */}
-        {comparisonMode === "qloo" &&
+        {/* Verified Neighborhood Partner Venues - only in single store view */}
+        {!isFleetView &&
+          comparisonMode === "qloo" &&
           validPartnerPins.map((place, idx) => {
             const isCloseMatch =
               place.distanceKm !== null && place.distanceKm <= 1.25;
@@ -273,32 +276,50 @@ export default function LocaleMap({
           <div className="flex flex-wrap items-center gap-4 text-xs">
             <span className="font-semibold text-neutral-900 flex items-center gap-1.5 text-sm">
               <Navigation className="w-4 h-4 text-[#0066FF]" />
-              {activeStore.neighborhood}, {activeStore.city}
+              {isFleetView
+                ? `Global Retail Fleet Matrix · ${stores.length} Stores Worldwide`
+                : `${activeStore.neighborhood}, ${activeStore.city}`}
             </span>
 
-            {/* Clear Legend Explaining Both Rings */}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#0066FF] border-2 border-white shadow-2xs inline-block" />
-                Active Store
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full border-2 border-[#10B981] inline-block" />
-                1.2km Walkable Partner Zone
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full border-2 border-dashed border-[#0066FF] inline-block" />
-                {activeStore.radiusKm}km Outer Search Ring
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#FF3B30] border-2 border-white shadow-2xs inline-block" />
-                Walkable Partner (&le; 1.25km)
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#FB923C] border-2 border-white shadow-2xs inline-block" />
-                Outer Catchment (1.25 - 2.5km)
-              </span>
-            </div>
+            {/* Clear Legend Explaining Both Rings or Fleet View */}
+            {isFleetView ? (
+              <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className="w-3 h-3 rounded-full bg-[#0066FF] border-2 border-white shadow-2xs inline-block" />
+                  Selected: {activeStore.neighborhood}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#1D1D1F] border-2 border-white shadow-2xs inline-block" />
+                  Fleet Locations ({stores.length} Stores)
+                </span>
+                <span className="text-[11px] font-mono text-neutral-400">
+                  (Click any pin to inspect store)
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-[#0066FF] border-2 border-white shadow-2xs inline-block" />
+                  Active Store
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full border-2 border-[#10B981] inline-block" />
+                  1.2km Walkable Partner Zone
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full border-2 border-dashed border-[#0066FF] inline-block" />
+                  {activeStore.radiusKm}km Outer Search Ring
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-[#FF3B30] border-2 border-white shadow-2xs inline-block" />
+                  Walkable Partner (&le; 1.25km)
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-[#FB923C] border-2 border-white shadow-2xs inline-block" />
+                  Outer Catchment (1.25 - 2.5km)
+                </span>
+              </div>
+            )}
           </div>
 
           <button
